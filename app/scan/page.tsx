@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { Camera, CameraType } from './Camera';
+import { LifeLine } from 'react-loading-indicators';
 
 const Wrapper = styled.div`
   position: fixed;
@@ -143,7 +144,7 @@ const App = () => {
   const camera = useRef<CameraType>(null);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [activeDeviceId, setActiveDeviceId] = useState<string | undefined>(undefined);
-  const [torchToggled, setTorchToggled] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
@@ -152,6 +153,14 @@ const App = () => {
       setDevices(videoDevices);
     })();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen w-fill">
+        <LifeLine color="#2563eb" size="medium" text="" textColor="" />
+      </div>
+    );
+  }
 
   return (
     <Wrapper>
