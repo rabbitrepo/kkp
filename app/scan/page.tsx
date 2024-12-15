@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { Camera, CameraType } from './Camera';
 import { LifeLine } from 'react-loading-indicators';
+import axios from 'axios';
+import { json } from 'stream/consumers';
 
 const Wrapper = styled.div`
   position: fixed;
@@ -23,8 +25,8 @@ const Control = styled.div`
   background: rgba(0, 0, 0, 0.8);
   z-index: 10;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: center; // Keep this for vertical centering
+  justify-content: center;
   padding: 50px;
   box-sizing: border-box;
   flex-direction: column-reverse;
@@ -34,6 +36,7 @@ const Control = styled.div`
     bottom: 0;
     width: 100%;
     height: 20%;
+    justify-content: center; 
   }
 
   @media (max-width: 400px) {
@@ -154,6 +157,44 @@ const App = () => {
     })();
   }, []);
 
+  const handleTakePhoto = async () => {
+    if (camera.current) {
+      setLoading(true); // Set loading to true when starting the photo process
+      const photo = camera.current.takePhoto();
+      alert(process.env.NEXT_PUBLIC_SERVER_URL)
+      // Convert base64 to Blob
+      const byteString = atob(photo.split(',')[1]);
+      const mimeString = photo.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeString });
+
+      // Create FormData and append the blob
+      const formData = new FormData();
+      formData.append('test_image', blob, 'photo.jpg');
+
+      // Make the HTTP request
+      try {
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URL}/recognize`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        alert('success')
+        alert(JSON.stringify(response.data)); // Alert the response
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        alert('Error uploading photo');
+        alert(JSON.stringify(error))
+      } finally {
+        setLoading(false); // Set loading to false after the request completes
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen w-fill">
@@ -189,7 +230,7 @@ const App = () => {
         />
       )}
       <Control>
-        <TakePhotoButton
+        {/* <TakePhotoButton
           onClick={() => {
             if (camera.current) {
               const photo = camera.current.takePhoto();
@@ -198,7 +239,8 @@ const App = () => {
               setImage(photo as string);
             }
           }}
-        />
+        /> */}
+        <TakePhotoButton onClick={handleTakePhoto} />
       </Control>
     </Wrapper>
   );
